@@ -1,0 +1,15 @@
+# MQTT broker for device-service (HU-012/013). SQL Server comes from ms-iam-db (sy_water_db_dev).
+# The API itself runs with "dotnet run" (see the guide).
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0.22
+    container_name: sy_water_mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+    restart: unless-stopped
+
+volumes:
+  mosquitto-data:

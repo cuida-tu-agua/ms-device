@@ -1,0 +1,37 @@
+# Requests for VS Code (REST Client) / Visual Studio / Rider.
+# 1) Log in on ms-iam and paste the accessToken below.
+# 2) Paste the id of one of YOUR places (ms-places) in @placeId.
+@devices = http://localhost:3003
+@token = PASTE_ACCESS_TOKEN
+@placeId = 00000000-0000-0000-0000-000000000000
+
+### Health (no token): database + mqtt
+GET {{devices}}/health
+
+### HU-013 - device of the place (404 device.not_linked if none)
+GET {{devices}}/api/places/{{placeId}}/device
+Authorization: Bearer {{token}}
+
+### HU-012 - link (dev device 1 of the seed; it must have sent a heartbeat in the last 10 min)
+POST {{devices}}/api/places/{{placeId}}/device
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "serialNumber": "SW-ESP32-000001",
+  "pairingCode": "4HZX-VCDP"
+}
+
+### HU-012 - wrong code (400 device.pairing_failed; 5 in a row = 429)
+POST {{devices}}/api/places/{{placeId}}/device
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "serialNumber": "SW-ESP32-000001",
+  "pairingCode": "AAAA-AAAA"
+}
+
+### HU-014 - unlink (204)
+DELETE {{devices}}/api/places/{{placeId}}/device
+Authorization: Bearer {{token}}

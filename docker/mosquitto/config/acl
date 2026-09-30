@@ -1,0 +1,11 @@
+# Sy Water - who can use which topic.
+# The broker only checks the USER. The device identity is proven by the factory token
+# inside every heartbeat, which ms-devices checks against devices.auth_token_hash.
+
+# device-service: only reads heartbeats
+user ms-devices
+topic read sywater/devices/+/heartbeat
+
+# every ESP32 (shared broker user): only publishes heartbeats
+user sywater-device
+topic write sywater/devices/+/heartbeat

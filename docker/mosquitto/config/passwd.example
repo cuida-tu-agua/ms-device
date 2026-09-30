@@ -1,0 +1,4 @@
+# This file is only an example. The real "passwd" (ignored by git) is created with:
+#   docker compose run --rm mosquitto mosquitto_passwd -c -b /mosquitto/config/passwd ms-devices <password>
+#   docker compose run --rm mosquitto mosquitto_passwd -b /mosquitto/config/passwd sywater-device <password>
+# Each line looks like: user:$7$101$<salt>$<hash>
