@@ -1,5 +1,7 @@
-# MQTT broker for device-service (HU-012/013). SQL Server comes from ms-iam-db (sy_water_db_dev).
-# The API itself runs with "dotnet run" (see the guide).
+# Brokers for device-service. SQL Server comes from ms-iam-db (sy_water_db_dev).
+# The APIs run with "dotnet run" (see the guide).
+#   mosquitto → ESP32 ⇄ ms-devices (MQTT)
+#   rabbitmq  → ms-devices → ms-consumption / ms-valve (events)
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0.22
@@ -11,5 +13,19 @@ services:
       - mosquitto-data:/mosquitto/data
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: sy_water_rabbitmq
+    ports:
+      - "5672:5672"     # AMQP (the services)
+      - "15672:15672"   # web panel: http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: sywater
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Copy .env.example to .env and set RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+
 volumes:
   mosquitto-data:
+  rabbitmq-data:

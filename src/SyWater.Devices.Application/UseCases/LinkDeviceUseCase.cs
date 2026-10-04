@@ -1,23 +1,16 @@
 using SyWater.Devices.Application.Devices;
+using SyWater.Devices.Application.Events;
 using SyWater.Devices.Application.Ports.In;
 using SyWater.Devices.Application.Ports.Out;
 using SyWater.Devices.Domain.Devices;
 
 namespace SyWater.Devices.Application.UseCases;
 
-/// <summary>
-/// HU-012. The order of the checks matters:
-///   1. formats (cheap, no I/O)          → 400
-///   2. the place is mine (ms-places)    → 404
-///   3. the place has no other device    → 409
-///   4. serial + pairing code            → 400 (same error for both) / 429 (device locked)
-///   5. device free, not revoked, online → 409
-/// Steps 4-5 never run for a place that is not yours, so nobody can probe devices.
-/// </summary>
 public sealed class LinkDeviceUseCase(
     IDeviceRepository devices,
-    IPlaceOwnershipChecker places,
+    IPlaceOwnershipChecker places,  
     DevicePolicy policy,
+    IEventPublisher events,
     TimeProvider clock) : ILinkDeviceUseCase
 {
     public async Task<DeviceView> ExecuteAsync(LinkDeviceCommand command, CancellationToken ct)
@@ -49,9 +42,10 @@ public sealed class LinkDeviceUseCase(
             throw new PairingFailedException();
         }
 
-        // Right code. The failed attempts are cleared only when the link is saved.
         var link = device.LinkTo(command.PlaceId, command.UserId, now, policy.RequireOnlineToLink);
         await devices.LinkAsync(device, link, ct);
+
+        await events.PublishAsync(new DeviceLinked(device.Id, device.SerialNumber, command.PlaceId, command.UserId, now), ct);
 
         return DeviceView.From(device, now);
     }

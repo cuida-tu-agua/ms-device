@@ -11,13 +11,14 @@ public class DeviceUseCasesTests
     private readonly FakeDeviceRepository _devices = new();
     private readonly FakePlaceOwnershipChecker _places = new();
     private readonly FakeClock _clock = new(TestDevices.Now);
+    private readonly FakeEventPublisher _events = new();
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _placeId = Guid.NewGuid();
 
     public DeviceUseCasesTests() => _places.OwnedPlaces.Add(_placeId);
 
     private LinkDeviceUseCase Link(DevicePolicy? policy = null) =>
-        new(_devices, _places, policy ?? DevicePolicy.Default, _clock);
+        new(_devices, _places, policy ?? DevicePolicy.Default, _events, _clock);
 
     private LinkDeviceCommand Command(string serial = TestDevices.Serial, string code = TestDevices.Code) =>
         new(_userId, _placeId, serial, code);
@@ -43,6 +44,8 @@ public class DeviceUseCasesTests
         Assert.Equal(DeviceStatus.Connected, view.Status);
         var link = Assert.Single(_devices.Links);
         Assert.Equal(_userId, link.LinkedBy);
+        var linked = Assert.IsType<SyWater.Devices.Application.Events.DeviceLinked>(Assert.Single(_events.Published));
+        Assert.Equal((device.Id, _placeId, _userId), (linked.DeviceId, linked.PlaceId, linked.UserId));
     }
 
     [Fact]
@@ -178,24 +181,26 @@ public class DeviceUseCasesTests
         var device = TestDevices.New(lastReportAt: TestDevices.Now, placeId: _placeId, linkedBy: _userId);
         _devices.Devices.Add(device);
 
-        await new UnlinkDeviceUseCase(_devices, _clock).ExecuteAsync(_userId, _placeId, default);
+        await new UnlinkDeviceUseCase(_devices, _events, _clock).ExecuteAsync(_userId, _placeId, default);
 
         Assert.False(device.IsLinked);
         var unlink = Assert.Single(_devices.Unlinks);
         Assert.Equal((device.Id, _userId, TestDevices.Now), unlink);
+        var unlinked = Assert.IsType<SyWater.Devices.Application.Events.DeviceUnlinked>(Assert.Single(_events.Published));
+        Assert.Equal(_placeId, unlinked.PlaceId);
     }
 
     [Fact]
     public async Task Unlink_without_device_is_404() =>
         await Assert.ThrowsAsync<DeviceNotLinkedException>(() =>
-            new UnlinkDeviceUseCase(_devices, _clock).ExecuteAsync(_userId, _placeId, default));
+            new UnlinkDeviceUseCase(_devices, _events, _clock).ExecuteAsync(_userId, _placeId, default));
 
     [Fact]
     public async Task After_unlinking_the_device_can_be_linked_again()
     {
         var device = TestDevices.New(lastReportAt: TestDevices.Now, placeId: _placeId, linkedBy: _userId);
         _devices.Devices.Add(device);
-        await new UnlinkDeviceUseCase(_devices, _clock).ExecuteAsync(_userId, _placeId, default);
+        await new UnlinkDeviceUseCase(_devices, _events, _clock).ExecuteAsync(_userId, _placeId, default);
 
         var view = await Link().ExecuteAsync(Command(), default);
 

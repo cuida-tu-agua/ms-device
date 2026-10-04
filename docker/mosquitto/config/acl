@@ -1,11 +1,20 @@
 # Sy Water - who can use which topic.
 # The broker only checks the USER. The device identity is proven by the factory token
-# inside every heartbeat, which ms-devices checks against devices.auth_token_hash.
+# inside every message, which ms-devices checks against devices.auth_token_hash.
 
-# device-service: only reads heartbeats
+# device-service: reads what the ESP32s send, writes the valve orders
 user ms-devices
 topic read sywater/devices/+/heartbeat
+topic read sywater/devices/+/telemetry
+topic read sywater/devices/+/valve/state
+topic write sywater/devices/+/valve/set
 
-# every ESP32 (shared broker user): only publishes heartbeats
+# every ESP32 (shared broker user): only publishes its own data
 user sywater-device
 topic write sywater/devices/+/heartbeat
+topic write sywater/devices/+/telemetry
+topic write sywater/devices/+/valve/state
+
+# Each ESP32 connects with client id = its serial (%c), so it can only RECEIVE ITS OWN orders.
+# A device with stolen broker credentials cannot listen to the orders of other devices.
+pattern read sywater/devices/%c/valve/set

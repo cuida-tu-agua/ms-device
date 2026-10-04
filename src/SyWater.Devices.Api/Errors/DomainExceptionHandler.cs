@@ -5,10 +5,6 @@ using SyWater.Devices.Domain.Devices;
 
 namespace SyWater.Devices.Api.Errors;
 
-/// <summary>
-/// Translates domain exceptions into HTTP responses with the RFC 9457 "problem details" format.
-/// The domain never knows about HTTP; this is the only place where that translation happens.
-/// </summary>
 public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails, TimeProvider clock) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken ct)
@@ -25,6 +21,7 @@ public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails
             DeviceRevokedException e => (StatusCodes.Status409Conflict, e.Code),
             PairingLockedException e => (StatusCodes.Status429TooManyRequests, e.Code),
             ExternalServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "service.unavailable"),
+            MessagingUnavailableException => (StatusCodes.Status503ServiceUnavailable, "mqtt.unavailable"),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "auth.invalid_token"),
             _ => (0, ""),
         };
@@ -33,7 +30,6 @@ public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails
 
         if (exception is PairingLockedException locked)
         {
-            // Standard header: how many seconds the client should wait.
             var seconds = Math.Max(1, (int)Math.Ceiling((locked.LockedUntilUtc - clock.GetUtcNow().UtcDateTime).TotalSeconds));
             context.Response.Headers.RetryAfter = seconds.ToString();
         }

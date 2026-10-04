@@ -1,4 +1,6 @@
+using SyWater.Devices.Application.Events;
 using SyWater.Devices.Application.Ports.Out;
+using SyWater.Devices.Application.Valve;
 using SyWater.Devices.Domain.Devices;
 
 namespace SyWater.Devices.Application.Tests;
@@ -62,4 +64,28 @@ internal sealed class FakeClock(DateTime utcNow) : TimeProvider
 {
     public DateTime UtcNow { get; set; } = utcNow;
     public override DateTimeOffset GetUtcNow() => new(UtcNow, TimeSpan.Zero);
+}
+
+internal sealed class FakeEventPublisher : IEventPublisher
+{
+    public List<IIntegrationEvent> Published { get; } = [];
+
+    public Task PublishAsync(IIntegrationEvent integrationEvent, CancellationToken ct)
+    {
+        Published.Add(integrationEvent);
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeValveCommandSender : IValveCommandSender
+{
+    public List<(string Serial, Guid CommandId, ValveAction Action)> Sent { get; } = [];
+    public bool BrokerDown { get; set; }
+
+    public Task SendAsync(string serialNumber, Guid commandId, ValveAction action, CancellationToken ct)
+    {
+        if (BrokerDown) throw new MessagingUnavailableException();
+        Sent.Add((serialNumber, commandId, action));
+        return Task.CompletedTask;
+    }
 }

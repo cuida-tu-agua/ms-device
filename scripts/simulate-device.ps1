@@ -28,7 +28,7 @@ $payload = @{ token = $Token; fw = $Firmware } | ConvertTo-Json -Compress
 
 do {
     # The JSON goes through stdin (-s): passing quotes as arguments breaks in Windows PowerShell 5.1
-    $payload | docker exec -i sy_water_mosquitto mosquitto_pub -u sywater-device -P $BrokerPassword -q 1 -t $topic -s
+    $payload | docker exec -i sy_water_mosquitto mosquitto_pub -i $Serial -u sywater-device -P $BrokerPassword -q 1 -t $topic -s
     if ($LASTEXITCODE -ne 0) { throw "mosquitto_pub failed (exit $LASTEXITCODE). Is the container sy_water_mosquitto running?" }
     Write-Host ("{0:HH:mm:ss}  heartbeat -> {1}" -f (Get-Date), $topic)
     if (-not $Once) { Start-Sleep -Seconds $Seconds }
