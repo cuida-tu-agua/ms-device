@@ -1,14 +1,12 @@
+using SyWater.Devices.Application.Events;
 using SyWater.Devices.Application.Ports.In;
 using SyWater.Devices.Application.Ports.Out;
 using SyWater.Devices.Domain.Devices;
 
 namespace SyWater.Devices.Application.UseCases;
 
-/// <summary>
-/// HU-014. The device row loses its place and the history row gets unlinked_at/unlinked_by.
-/// Nothing is deleted: the consumption already recorded stays with the place.
-/// </summary>
-public sealed class UnlinkDeviceUseCase(IDeviceRepository devices, TimeProvider clock) : IUnlinkDeviceUseCase
+public sealed class UnlinkDeviceUseCase(IDeviceRepository devices, IEventPublisher events, TimeProvider clock)
+    : IUnlinkDeviceUseCase
 {
     public async Task ExecuteAsync(Guid userId, Guid placeId, CancellationToken ct)
     {
@@ -19,5 +17,8 @@ public sealed class UnlinkDeviceUseCase(IDeviceRepository devices, TimeProvider 
         var now = clock.GetUtcNow().UtcDateTime;
         device.Unlink(now);
         await devices.UnlinkAsync(device, placeId, userId, now, ct);
+
+        // After the commit: valve-service forgets this valve (consumption keeps the history)
+        await events.PublishAsync(new DeviceUnlinked(device.Id, device.SerialNumber, placeId, userId, now), ct);
     }
 }

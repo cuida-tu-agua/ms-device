@@ -1,15 +1,18 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MQTTnet;
 
 namespace SyWater.Devices.Api.Messaging;
 
-/// <summary>Shared flag: the listener writes it, /health reads it.</summary>
 public sealed class MqttConnectionState
 {
     private volatile bool _connected;
+    private volatile IMqttClient? _client;
+
     public bool IsConnected { get => _connected; set => _connected = value; }
+
+    public IMqttClient? Client { get => _connected ? _client : null; set => _client = value; }
 }
 
-/// <summary>/health shows "Degraded" (still HTTP 200) while the broker is not reachable.</summary>
 public sealed class MqttHealthCheck(MqttConnectionState state) : IHealthCheck
 {
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default) =>

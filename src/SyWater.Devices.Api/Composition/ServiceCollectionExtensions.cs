@@ -7,14 +7,12 @@ using SyWater.Devices.Application.Ports.In;
 using SyWater.Devices.Application.Ports.Out;
 using SyWater.Devices.Application.UseCases;
 using SyWater.Devices.Domain.Devices;
+using SyWater.Devices.Infrastructure.Messaging;
 using SyWater.Devices.Infrastructure.Persistence;
 using SyWater.Devices.Infrastructure.Places;
 
 namespace SyWater.Devices.Api.Composition;
 
-/// <summary>
-/// Composition root: the ONLY place that knows which adapter implements each port.
-/// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>Inbound ports → use cases, plus their settings.</summary>
@@ -34,13 +32,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUnlinkDeviceUseCase, UnlinkDeviceUseCase>();
         services.AddScoped<IRecordHeartbeatUseCase, RecordHeartbeatUseCase>();
         services.AddScoped<IRefreshDeviceStatusUseCase, RefreshDeviceStatusUseCase>();
+        services.AddScoped<IRecordTelemetryUseCase, RecordTelemetryUseCase>();
+        services.AddScoped<IRecordValveStateUseCase, RecordValveStateUseCase>();
+        services.AddScoped<ISendValveCommandUseCase, SendValveCommandUseCase>();
         return services;
     }
 
-    /// <summary>Outbound ports → adapters (SQL Server and ms-places).</summary>
     public static IServiceCollection AddDevicesInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        // IsNullOrWhiteSpace: appsettings.json has "Devices": "" on purpose (the real value is a user-secret).
         var connectionString = config.GetConnectionString("Devices");
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new InvalidOperationException("Missing connection string 'ConnectionStrings:Devices' (user-secrets).");
@@ -52,6 +51,12 @@ public static class ServiceCollectionExtensions
         if (string.IsNullOrWhiteSpace(placesUrl))
             throw new InvalidOperationException("Missing 'Services:PlacesBaseUrl'.");
 
+        services.Configure<RabbitMqOptions>(config.GetSection(RabbitMqOptions.Section));
+        if (string.IsNullOrWhiteSpace(config[$"{RabbitMqOptions.Section}:Host"]))
+            services.AddSingleton<IEventPublisher, LogOnlyEventPublisher>();
+        else
+            services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
+
         services.AddHttpContextAccessor();
         services.AddScoped<IAccessTokenProvider, HttpContextAccessTokenProvider>();
         services.AddHttpClient<IPlaceOwnershipChecker, HttpPlaceOwnershipChecker>(client =>
@@ -62,11 +67,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Inbound adapters that are not HTTP: the MQTT listener and the status sweeper.</summary>
     public static IServiceCollection AddDevicesBackgroundWork(this IServiceCollection services, IConfiguration config)
     {
         services.Configure<MqttOptions>(config.GetSection(MqttOptions.Section));
         services.AddSingleton<MqttConnectionState>();
+        services.AddSingleton<IValveCommandSender, MqttValveCommandSender>();
         services.AddHostedService<MqttHeartbeatListener>();
         services.AddHostedService<DeviceStatusSweeper>();
         return services;
