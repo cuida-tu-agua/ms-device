@@ -30,6 +30,12 @@ public interface IUnlinkUserDevicesUseCase
     Task<int> ExecuteAsync(Guid userId, CancellationToken ct);
 }
 
+/// <summary>HU-062: counts for the administrator's dashboard (asked by ms-iam).</summary>
+public interface IGetDeviceMetricsUseCase
+{
+    Task<DeviceMetrics> ExecuteAsync(CancellationToken ct);
+}
+
 public interface IRecordHeartbeatUseCase
 {
     Task<HeartbeatOutcome> ExecuteAsync(HeartbeatMessage message, CancellationToken ct);

@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGetPlaceDeviceUseCase, GetPlaceDeviceUseCase>();
         services.AddScoped<IUnlinkDeviceUseCase, UnlinkDeviceUseCase>();
         services.AddScoped<IUnlinkUserDevicesUseCase, UnlinkUserDevicesUseCase>();
+        services.AddScoped<IGetDeviceMetricsUseCase, GetDeviceMetricsUseCase>();
         services.AddScoped<IRecordHeartbeatUseCase, RecordHeartbeatUseCase>();
         services.AddScoped<IRefreshDeviceStatusUseCase, RefreshDeviceStatusUseCase>();
         services.AddScoped<IRecordTelemetryUseCase, RecordTelemetryUseCase>();

@@ -1,3 +1,4 @@
+using SyWater.Devices.Application.Devices;
 using SyWater.Devices.Domain.Devices;
 
 namespace SyWater.Devices.Application.Ports.Out;
@@ -12,6 +13,9 @@ public interface IDeviceRepository
 
     /// <summary>Every device currently linked by this user (they may own several places).</summary>
     Task<IReadOnlyList<Device>> GetLinkedByAsync(Guid userId, CancellationToken ct);
+
+    /// <summary>HU-062: how many devices exist, are connected at <paramref name="now"/> and are linked to a place.</summary>
+    Task<DeviceMetrics> GetMetricsAsync(DateTime now, CancellationToken ct);
 
     // Each write touches ONLY its own columns. A heartbeat (every 30 s) that saved the whole row
     // could overwrite a link made a millisecond before, so there is no generic "Update".

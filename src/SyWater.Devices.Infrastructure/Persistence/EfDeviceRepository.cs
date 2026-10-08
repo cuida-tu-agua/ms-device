@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using SyWater.Devices.Application.Devices;
 using SyWater.Devices.Application.Ports.Out;
 using SyWater.Devices.Domain.Devices;
 
@@ -32,6 +33,17 @@ public sealed class EfDeviceRepository(DevicesDbContext db) : IDeviceRepository
             .Where(d => d.LinkedBy == userId && d.PlaceId != null)
             .ToListAsync(ct);
         return entities.Select(DeviceMapper.ToDomain).ToList();
+    }
+
+    public async Task<DeviceMetrics> GetMetricsAsync(DateTime now, CancellationToken ct)
+    {
+        // Sequential on purpose: one DbContext cannot run two queries at once
+        var total = await db.Devices.CountAsync(ct);
+        var linked = await db.Devices.CountAsync(d => d.PlaceId != null, ct);
+        // Same rule as Device.StatusAt: connected = last report inside the device's own threshold
+        var connected = await db.Devices.CountAsync(
+            d => d.LastReportAt != null && d.LastReportAt >= now.AddMinutes(-d.InactivityThresholdMin), ct);
+        return new DeviceMetrics(total, connected, linked);
     }
 
     public Task SaveHeartbeatAsync(Device device, CancellationToken ct) =>

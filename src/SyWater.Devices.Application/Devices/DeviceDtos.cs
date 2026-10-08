@@ -5,6 +5,12 @@ namespace SyWater.Devices.Application.Devices;
 /// <summary>HU-012 input. UserId comes from the token, never from the body.</summary>
 public sealed record LinkDeviceCommand(Guid UserId, Guid PlaceId, string SerialNumber, string PairingCode);
 
+/// <summary>
+/// HU-062: platform totals. Connected = reported within its own inactivity threshold (calculated now);
+/// Linked = devices attached to a place, which is also the number of places that have a device.
+/// </summary>
+public sealed record DeviceMetrics(int Total, int Connected, int Linked);
+
 /// <summary>What the app sees about a device (never the hashes).</summary>
 public sealed record DeviceView(
     Guid Id,

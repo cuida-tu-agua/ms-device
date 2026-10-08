@@ -1,3 +1,4 @@
+using SyWater.Devices.Application.Devices;
 using SyWater.Devices.Application.Events;
 using SyWater.Devices.Application.Ports.Out;
 using SyWater.Devices.Application.Valve;
@@ -21,6 +22,12 @@ internal sealed class FakeDeviceRepository : IDeviceRepository
 
     public Task<IReadOnlyList<Device>> GetLinkedByAsync(Guid userId, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<Device>>(Devices.Where(d => d.LinkedBy == userId && d.PlaceId != null).ToList());
+
+    public Task<DeviceMetrics> GetMetricsAsync(DateTime now, CancellationToken ct) =>
+        Task.FromResult(new DeviceMetrics(
+            Devices.Count,
+            Devices.Count(d => d.StatusAt(now) == DeviceStatus.Connected),
+            Devices.Count(d => d.IsLinked)));
 
     public Task SaveHeartbeatAsync(Device device, CancellationToken ct)
     {
