@@ -26,6 +26,14 @@ public sealed class EfDeviceRepository(DevicesDbContext db) : IDeviceRepository
         return entity is null ? null : DeviceMapper.ToDomain(entity);
     }
 
+    public async Task<IReadOnlyList<Device>> GetLinkedByAsync(Guid userId, CancellationToken ct)
+    {
+        var entities = await db.Devices.AsNoTracking()
+            .Where(d => d.LinkedBy == userId && d.PlaceId != null)
+            .ToListAsync(ct);
+        return entities.Select(DeviceMapper.ToDomain).ToList();
+    }
+
     public Task SaveHeartbeatAsync(Device device, CancellationToken ct) =>
         db.Devices.Where(d => d.Id == device.Id).ExecuteUpdateAsync(s => s
             .SetProperty(d => d.LastReportAt, device.LastReportAt)

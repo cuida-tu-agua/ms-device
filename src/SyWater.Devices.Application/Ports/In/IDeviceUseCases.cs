@@ -23,6 +23,13 @@ public interface IUnlinkDeviceUseCase
     Task ExecuteAsync(Guid userId, Guid placeId, CancellationToken ct);
 }
 
+/// <summary>HU-008: the owner deleted the account, so every device linked by that user is released.</summary>
+public interface IUnlinkUserDevicesUseCase
+{
+    /// <returns>How many devices were unlinked.</returns>
+    Task<int> ExecuteAsync(Guid userId, CancellationToken ct);
+}
+
 public interface IRecordHeartbeatUseCase
 {
     Task<HeartbeatOutcome> ExecuteAsync(HeartbeatMessage message, CancellationToken ct);

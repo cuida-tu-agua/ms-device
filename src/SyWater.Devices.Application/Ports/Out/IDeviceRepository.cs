@@ -10,6 +10,9 @@ public interface IDeviceRepository
     /// <summary>The device currently linked to a place, or null.</summary>
     Task<Device?> GetByPlaceAsync(Guid placeId, CancellationToken ct);
 
+    /// <summary>Every device currently linked by this user (they may own several places).</summary>
+    Task<IReadOnlyList<Device>> GetLinkedByAsync(Guid userId, CancellationToken ct);
+
     // Each write touches ONLY its own columns. A heartbeat (every 30 s) that saved the whole row
     // could overwrite a link made a millisecond before, so there is no generic "Update".
 

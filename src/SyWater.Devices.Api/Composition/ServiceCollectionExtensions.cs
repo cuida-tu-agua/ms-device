@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILinkDeviceUseCase, LinkDeviceUseCase>();
         services.AddScoped<IGetPlaceDeviceUseCase, GetPlaceDeviceUseCase>();
         services.AddScoped<IUnlinkDeviceUseCase, UnlinkDeviceUseCase>();
+        services.AddScoped<IUnlinkUserDevicesUseCase, UnlinkUserDevicesUseCase>();
         services.AddScoped<IRecordHeartbeatUseCase, RecordHeartbeatUseCase>();
         services.AddScoped<IRefreshDeviceStatusUseCase, RefreshDeviceStatusUseCase>();
         services.AddScoped<IRecordTelemetryUseCase, RecordTelemetryUseCase>();

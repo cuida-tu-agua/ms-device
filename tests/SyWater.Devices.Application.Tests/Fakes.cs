@@ -19,6 +19,9 @@ internal sealed class FakeDeviceRepository : IDeviceRepository
     public Task<Device?> GetByPlaceAsync(Guid placeId, CancellationToken ct) =>
         Task.FromResult(Devices.FirstOrDefault(d => d.PlaceId == placeId));
 
+    public Task<IReadOnlyList<Device>> GetLinkedByAsync(Guid userId, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Device>>(Devices.Where(d => d.LinkedBy == userId && d.PlaceId != null).ToList());
+
     public Task SaveHeartbeatAsync(Device device, CancellationToken ct)
     {
         Updates++;
