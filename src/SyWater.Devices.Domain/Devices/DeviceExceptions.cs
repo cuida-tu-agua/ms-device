@@ -43,3 +43,19 @@ public sealed class DeviceNotLinkedException(Guid placeId)
 /// <summary>The place does not exist, is deleted or belongs to another user (answer of ms-places). HTTP 404.</summary>
 public sealed class PlaceNotFoundException(Guid placeId)
     : DomainException("place.not_found", $"Place {placeId} was not found.");
+
+/// <summary>Admin panel: the device does not exist. HTTP 404.</summary>
+public sealed class DeviceNotFoundException(Guid id)
+    : DomainException("device.not_found", $"Device {id} was not found.");
+
+/// <summary>Admin panel: credentials and decommission are only for devices nobody has linked (the owner must unlink first). HTTP 409.</summary>
+public sealed class DeviceStillLinkedException(string serialNumber)
+    : DomainException("device.still_linked", $"Device {serialNumber} is linked to a place. Its owner must unlink it from the app first.");
+
+/// <summary>Admin panel: the device was already decommissioned. HTTP 409.</summary>
+public sealed class DeviceAlreadyDecommissionedException(string serialNumber)
+    : DomainException("device.already_decommissioned", $"Device {serialNumber} was already decommissioned.");
+
+/// <summary>Admin panel: a device with that serial number is already registered. HTTP 409.</summary>
+public sealed class SerialAlreadyExistsException(string serialNumber)
+    : DomainException("device.serial_exists", $"A device with serial number {serialNumber} is already registered.");

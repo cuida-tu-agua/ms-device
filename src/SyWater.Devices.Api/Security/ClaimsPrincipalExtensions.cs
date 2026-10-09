@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using SyWater.Devices.Application.Devices;
 
 namespace SyWater.Devices.Api.Security;
 
@@ -15,4 +16,7 @@ public static class ClaimsPrincipalExtensions
             ? id
             : throw new UnauthorizedAccessException("The token has no valid 'sub' claim.");
     }
+
+    /// <summary>The administrator of an admin request: id and display name, to leave a readable trace in the device history.</summary>
+    public static AdminActor GetAdmin(this ClaimsPrincipal user) => new(user.GetUserId(), user.FindFirstValue("name"));
 }

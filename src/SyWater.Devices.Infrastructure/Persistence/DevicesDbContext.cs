@@ -12,4 +12,5 @@ public sealed class DevicesDbContext(DbContextOptions<DevicesDbContext> options)
 {
     public DbSet<DeviceEntity> Devices => Set<DeviceEntity>();
     public DbSet<DeviceLinkEntity> Links => Set<DeviceLinkEntity>();
+    public DbSet<DeviceAdminLogEntity> AdminLog => Set<DeviceAdminLogEntity>();
 }

@@ -27,7 +27,8 @@ builder.Services.AddDevicesBackgroundWork(builder.Configuration);   // MQTT + sw
 // ── Security: every endpoint requires a valid ms-iam token unless marked AllowAnonymous ──
 builder.Services.AddIamJwtAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddAuthorizationBuilder()
-    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
+    .AddPolicy(AuthorizationPolicies.Admin, policy => policy.RequireClaim("roles", AuthorizationPolicies.AdminRole));
 builder.Services.AddPairingRateLimiter(builder.Configuration);   // HU-012: attempts per user
 
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy

@@ -32,6 +32,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUnlinkDeviceUseCase, UnlinkDeviceUseCase>();
         services.AddScoped<IUnlinkUserDevicesUseCase, UnlinkUserDevicesUseCase>();
         services.AddScoped<IGetDeviceMetricsUseCase, GetDeviceMetricsUseCase>();
+        services.AddScoped<IListAdminDevicesUseCase, ListAdminDevicesUseCase>();
+        services.AddScoped<IGetAdminDeviceUseCase, GetAdminDeviceUseCase>();
+        services.AddScoped<IRegisterDevicesUseCase, RegisterDevicesUseCase>();
+        services.AddScoped<IRegenerateCredentialsUseCase, RegenerateCredentialsUseCase>();
+        services.AddScoped<IDecommissionDeviceUseCase, DecommissionDeviceUseCase>();
         services.AddScoped<IRecordHeartbeatUseCase, RecordHeartbeatUseCase>();
         services.AddScoped<IRefreshDeviceStatusUseCase, RefreshDeviceStatusUseCase>();
         services.AddScoped<IRecordTelemetryUseCase, RecordTelemetryUseCase>();
@@ -48,6 +53,7 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<DevicesDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IDeviceRepository, EfDeviceRepository>();
+        services.AddScoped<IAdminDeviceRepository, EfAdminDeviceRepository>();
 
         var placesUrl = config["Services:PlacesBaseUrl"];
         if (string.IsNullOrWhiteSpace(placesUrl))

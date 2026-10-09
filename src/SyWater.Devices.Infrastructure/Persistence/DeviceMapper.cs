@@ -32,6 +32,27 @@ internal static class DeviceMapper
         createdAt: AsUtc(e.CreatedAt),
         updatedAt: AsUtc(e.UpdatedAt));
 
+    public static DeviceEntity ToEntity(Device d) => new()
+    {
+        Id = d.Id,
+        SerialNumber = d.SerialNumber,
+        AuthTokenHash = d.AuthTokenHash,
+        AuthTokenLastUsedAt = d.AuthTokenLastUsedAt,
+        AuthTokenRevokedAt = d.AuthTokenRevokedAt,
+        PairingCodeHash = d.PairingCodeHash,
+        PairingFailedAttempts = d.PairingFailedAttempts,
+        PairingLockedUntil = d.PairingLockedUntil,
+        PlaceId = d.PlaceId,
+        LinkedBy = d.LinkedBy,
+        LinkedAt = d.LinkedAt,
+        Status = ToDb(d.Status),
+        LastReportAt = d.LastReportAt,
+        FirmwareVersion = d.FirmwareVersion,
+        InactivityThresholdMin = d.InactivityThresholdMinutes,
+        CreatedAt = d.CreatedAt,
+        UpdatedAt = d.UpdatedAt,
+    };
+
     public static DeviceLinkEntity ToEntity(DeviceLink link) => new()
     {
         Id = link.Id,

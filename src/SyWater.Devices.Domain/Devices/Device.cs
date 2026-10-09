@@ -13,10 +13,10 @@ public sealed class Device
     public string SerialNumber { get; }
 
     // ── Factory secrets (hashes only) ────────────────────────────────────
-    public string AuthTokenHash { get; }
+    public string AuthTokenHash { get; private set; }
     public DateTime? AuthTokenLastUsedAt { get; private set; }
-    public DateTime? AuthTokenRevokedAt { get; }
-    public string PairingCodeHash { get; }
+    public DateTime? AuthTokenRevokedAt { get; private set; }
+    public string PairingCodeHash { get; private set; }
     public int PairingFailedAttempts { get; private set; }
     public DateTime? PairingLockedUntil { get; private set; }
 
@@ -60,8 +60,20 @@ public sealed class Device
     }
 
     /// <summary>
-    /// Rebuilds a device read from the database. There is no "Create": devices are
-    /// registered at the factory (seed / new-device.ps1), never by the app.
+    /// Factory registration (admin panel): a new device that never reported and is not linked. Only the hashes of its
+    /// secrets are kept; the caller shows the plain values to the administrator ONCE.
+    /// </summary>
+    public static Device Register(string serialNumber, FactoryCredentials credentials, DateTime now)
+    {
+        var serial = DeviceSecrets.NormalizeSerial(serialNumber);
+        return new Device(Guid.NewGuid(), serial, DeviceSecrets.HashToken(credentials.AuthToken), null, null,
+            DeviceSecrets.HashPairingCode(serial, credentials.PairingCode), 0, null, null, null, null,
+            DeviceStatus.NeverReported, null, null, 10, now, now);
+    }
+
+    /// <summary>
+    /// Rebuilds a device read from the database. The app creates devices only through <see cref="Register"/> (admin
+    /// panel); the seed and scripts/new-device.ps1 are the other ways in.
     /// </summary>
     public static Device Restore(Guid id, string serialNumber, string authTokenHash, DateTime? authTokenLastUsedAt,
         DateTime? authTokenRevokedAt, string pairingCodeHash, int pairingFailedAttempts, DateTime? pairingLockedUntil,
@@ -154,6 +166,35 @@ public sealed class Device
         PairingLockedUntil = null;
         UpdatedAt = now;
         return DeviceLink.Open(Id, placeId, userId, now);
+    }
+
+    // ── Admin panel ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// New token and pairing code (lost label, repaired equipment). The old ones stop working at once. Only a device
+    /// nobody has linked: the owner must unlink it first.
+    /// </summary>
+    public void RegenerateCredentials(FactoryCredentials credentials, DateTime now)
+    {
+        if (IsRevoked) throw new DeviceRevokedException(SerialNumber);
+        if (IsLinked) throw new DeviceStillLinkedException(SerialNumber);
+
+        AuthTokenHash = DeviceSecrets.HashToken(credentials.AuthToken);
+        AuthTokenLastUsedAt = null;
+        PairingCodeHash = DeviceSecrets.HashPairingCode(SerialNumber, credentials.PairingCode);
+        PairingFailedAttempts = 0;
+        PairingLockedUntil = null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Stolen, damaged or withdrawn: its messages are ignored and nobody can link it. Final. Only if nobody has it linked.</summary>
+    public void Decommission(DateTime now)
+    {
+        if (IsRevoked) throw new DeviceAlreadyDecommissionedException(SerialNumber);
+        if (IsLinked) throw new DeviceStillLinkedException(SerialNumber);
+
+        AuthTokenRevokedAt = now;
+        UpdatedAt = now;
     }
 
     // ── HU-014: unlink ───────────────────────────────────────────────────
